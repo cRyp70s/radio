@@ -7,7 +7,7 @@ import subprocess as sp
 import requests
 
 from conf import RTSP_STREAM, CACHE_FILE_TIME
-from .redis import redis_backend
+from ..common.redis import redis_backend
 
 # Command to stream music to rtsp-simple-server instance with ffmpeg
 COMMAND = [
