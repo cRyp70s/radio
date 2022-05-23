@@ -2,7 +2,8 @@ from flask import Blueprint, current_app, jsonify
 from flask_restful import Api
 from marshmallow import ValidationError
 from api.extensions import apispec
-from api.api.resources import UserResource, UserList
+from api.api.resources.resources import UserList
+from api.api.resources.admin import MediaResource
 from api.api.schemas import UserSchema
 
 
@@ -10,8 +11,8 @@ blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
 api = Api(blueprint)
 
 
-api.add_resource(UserResource, "/users/<int:user_id>", endpoint="user_by_id")
 api.add_resource(UserList, "/users", endpoint="users")
+api.add_resource(MediaResource, "/media/<int:user_id>", endpoint="media")
 
 
 @blueprint.before_app_first_request

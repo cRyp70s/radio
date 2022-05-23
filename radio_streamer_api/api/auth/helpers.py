@@ -7,6 +7,7 @@ from datetime import datetime
 
 from flask_restful import abort
 from flask_jwt_extended import decode_token, get_current_user
+from flask_jwt_extended import get_jwt_identity
 from sqlalchemy.orm.exc import NoResultFound
 
 from api.extensions import db
@@ -74,3 +75,16 @@ def admin_only():
             if user.is_admin:
                 return True
     abort(401)
+
+def admin_required(func):
+    """
+        Decorator for restricting resource access to admins only.
+    """
+    def _admin_required(*args, **kwargs):
+        current_user = get_jwt_identity()
+        print("user_id", current_user)
+        user = User.query.get_or_404(current_user)
+        if not user.is_admin:
+            abort(401)
+        return func(*args, **kwargs)
+    return _admin_required
