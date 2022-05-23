@@ -1,3 +1,3 @@
-RTSP_STREAM = "rtsp://rtsp-server:8554/mystream"
-REDIS_URL = "redis://redis:6379"
+RTSP_STREAM = "rtsp://localhost:8554/mystream"
+REDIS_URL = "redis://localhost:6379"
 CACHE_FILE_TIME = 1200

@@ -6,7 +6,7 @@
 # for celery: docker run --env-file=.flaskenv image celery worker -A myapi.celery_app:app
 #
 # note that celery will require a running broker and result backend
-FROM python:3.8
+FROM python:3.8-slim-buster
 
 RUN mkdir /code
 WORKDIR /code
@@ -16,7 +16,6 @@ RUN pip install -U pip
 RUN pip install -r requirements.txt
 RUN pip install -e .
 
-COPY api api/
-COPY migrations migrations/
+COPY . .
 
 EXPOSE 5000

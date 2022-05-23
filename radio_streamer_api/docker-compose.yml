@@ -1,9 +1,8 @@
 # WARNING: this file is not suitable for production, please use with caution
-version: '3'
+version: '3.3'
 
 services:
   web:
-    image: api
     build: .
     command: gunicorn -b 0.0.0.0:5000 api.wsgi:app
     env_file:

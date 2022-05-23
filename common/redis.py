@@ -1,7 +1,7 @@
 from typing import Union, Any
 import json
 import redis
-from conf import REDIS_URL
+from config import REDIS_URL
 
 
 class Redis:
