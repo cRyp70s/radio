@@ -5,11 +5,12 @@ https://github.com/vimalloc/flask-jwt-extended/blob/master/examples/blocklist_da
 """
 from datetime import datetime
 
-from flask_jwt_extended import decode_token
+from flask_restful import abort
+from flask_jwt_extended import decode_token, get_current_user
 from sqlalchemy.orm.exc import NoResultFound
 
 from api.extensions import db
-from api.models import TokenBlocklist
+from api.models import TokenBlocklist, User
 
 
 def add_token_to_database(encoded_token, identity_claim):
@@ -63,3 +64,13 @@ def revoke_token(token_jti, user):
         db.session.commit()
     except NoResultFound:
         raise Exception("Could not find the token {}".format(token_jti))
+
+def admin_only():
+    """Raise Error if current user is not admin"""
+    user_id = get_current_user()
+    if user_id:
+        user = User.query.filter_by(id=user_id)
+        if user:
+            if user.is_admin:
+                return True
+    abort(401)
