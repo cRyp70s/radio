@@ -1,64 +1,27 @@
 from flask import request
 from flask_restful import Resource, abort, current_app
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_current_user
 from api.api.schemas import UserSchema
 from api.models import User
 from api.auth.helpers import admin_only, admin_required
 from api.extensions import db
 from api.commons.pagination import paginate
-from common.redis import redis_backend
+from api.commons.redis import redis_backend
 
 
 class UserList(Resource):
-    """Creation and get_all
-
-    ---
-    get:
-      tags:
-        - api
-      summary: Get a list of users
-      description: Get a list of paginated users
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/PaginatedResult'
-                  - type: object
-                    properties:
-                      results:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/UserSchema'
-    post:
-      tags:
-        - api
-      summary: Create a user
-      description: Create a new user
-      requestBody:
-        content:
-          application/json:
-            schema:
-              UserSchema
-      responses:
-        201:
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-                    example: user created
-                  user: UserSchema
+    """
+        Creation and get_all
     """
 
     method_decorators = [jwt_required(optional=True)]
 
     def get(self, user_id):
-        schema = UserSchema()
+        user = get_current_user()
+        if user.id != user_id and not user.is_admin:
+            abort(401)
         user = User.query.get_or_404(user_id)
+        schema = UserSchema()
         return {"user": schema.dump(user)}
 
     def post(self):
@@ -71,6 +34,9 @@ class UserList(Resource):
         return {"msg": "user created", "user": schema.dump(user)}, 201
     
     def delete(self, user_id):
+        user = get_current_user()
+        if user.id != user_id and not user.is_admin:
+            abort(401)
         user = User.query.get_or_404(user_id)
         db.session.delete(user)
         db.session.commit()

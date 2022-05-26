@@ -7,7 +7,6 @@ class User(db.Model):
     """Basic user model"""
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(80), unique=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     _password = db.Column("password", db.String(255), nullable=False)
@@ -22,7 +21,7 @@ class User(db.Model):
         self._password = pwd_context.hash(value)
 
     def __repr__(self):
-        return "<User %s>" % self.username
+        return "<User %s>" % self.email
 
 class Media(db.Model):
     __tablename__ = 'media'
@@ -32,6 +31,7 @@ class Media(db.Model):
     thumbnail_image_url = db.Column(db.String(255))
     audio_url = db.Column(db.String(20))
     misc = db.Column(db.PickleType, default=dict())
+    setter_id = db.Column(db.Integer)
 
     def __repr__(self):
         return 'Id: {}, Title: {}'.format(self.id, self.title)

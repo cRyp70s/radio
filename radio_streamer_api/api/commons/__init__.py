@@ -1,3 +1,3 @@
-import imagekit
+from .imagekit import ImageKit
 
-storage = imagekit.ImageKit()
+storage = ImageKit()

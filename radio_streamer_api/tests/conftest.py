@@ -1,23 +1,25 @@
 import json
 import pytest
+import warnings
 from dotenv import load_dotenv
 
 from api.models import User
 from api.app import create_app
 from api.extensions import db as _db
-from pytest_factoryboy import register
-from tests.factories import UserFactory
-
-
-register(UserFactory)
 
 
 @pytest.fixture(scope="session")
 def app():
     load_dotenv(".testenv")
     app = create_app(testing=True)
-    return app
+    ctx = app.test_request_context()
+    ctx.push()
+    yield app
+    ctx.pop()
 
+@pytest.fixture(scope="session")
+def client(app):
+    return app.test_client()
 
 @pytest.fixture
 def db(app):
@@ -34,22 +36,20 @@ def db(app):
 
 @pytest.fixture
 def admin_user(db):
-    user = User(
-        username='admin',
-        email='admin@admin.com',
-        password='admin'
-    )
-
-    db.session.add(user)
-    db.session.commit()
+    try:
+        u = User(email="admin@admin.com", password="admin", is_admin=True)
+        db.session.add(u)
+        db.session.commit()
+    except:
+        db.session.rollback()
+    user = User.query.filter_by(is_admin=True).first()
 
     return user
-
 
 @pytest.fixture
 def admin_headers(admin_user, client):
     data = {
-        'username': admin_user.username,
+        'email': admin_user.email,
         'password': 'admin'
     }
     rep = client.post(
@@ -68,7 +68,7 @@ def admin_headers(admin_user, client):
 @pytest.fixture
 def admin_refresh_headers(admin_user, client):
     data = {
-        'username': admin_user.username,
+        'email': admin_user.email,
         'password': 'admin'
     }
     rep = client.post(
@@ -82,3 +82,4 @@ def admin_refresh_headers(admin_user, client):
         'content-type': 'application/json',
         'authorization': 'Bearer %s' % tokens['refresh_token']
     }
+ 

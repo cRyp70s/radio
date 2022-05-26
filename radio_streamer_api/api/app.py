@@ -6,6 +6,7 @@ from api.extensions import apispec
 from api.extensions import db
 from api.extensions import jwt
 from api.extensions import migrate
+from api.models import User
 
 
 def create_app(testing=False):
@@ -15,11 +16,19 @@ def create_app(testing=False):
 
     if testing is True:
         app.config["TESTING"] = True
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 
     configure_extensions(app)
     configure_cli(app)
     configure_apispec(app)
     register_blueprints(app)
+
+    with app.app_context():
+        db.create_all()
+        if not User.query.filter_by(is_admin=True).all():
+            admin = User(email="admin@admin.com", password="admin", is_admin=True)
+            db.session.add(admin)
+            db.session.commit()
 
     return app
 
@@ -59,3 +68,4 @@ def register_blueprints(app):
     """Register all blueprints for application"""
     app.register_blueprint(auth.views.blueprint)
     app.register_blueprint(api.views.blueprint)
+

@@ -15,7 +15,7 @@ from api.auth.helpers import revoke_token, is_token_revoked, add_token_to_databa
 blueprint = Blueprint("auth", __name__, url_prefix="/auth")
 
 
-@blueprint.route("/login", methods=["POST"])
+@blueprint.post("/login")
 def login():
     """Authenticate user and return tokens
 
@@ -31,7 +31,7 @@ def login():
             schema:
               type: object
               properties:
-                username:
+                email:
                   type: string
                   example: myuser
                   required: true
@@ -59,12 +59,12 @@ def login():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
 
-    username = request.json.get("username", None)
+    email = request.json.get("email", None)
     password = request.json.get("password", None)
-    if not username or not password:
-        return jsonify({"msg": "Missing username or password"}), 400
+    if not email or not password:
+        return jsonify({"msg": "Missing email or password"}), 400
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(email=email).first()
     if user is None or not pwd_context.verify(password, user.password):
         return jsonify({"msg": "Bad credentials"}), 400
 
@@ -77,7 +77,7 @@ def login():
     return jsonify(ret), 200
 
 
-@blueprint.route("/refresh", methods=["POST"])
+@blueprint.post("/refresh")
 @jwt_required(refresh=True)
 def refresh():
     """Get an access token from a refresh token
@@ -110,7 +110,7 @@ def refresh():
     return jsonify(ret), 200
 
 
-@blueprint.route("/revoke_access", methods=["DELETE"])
+@blueprint.delete("/revoke_access")
 @jwt_required()
 def revoke_access_token():
     """Revoke an access token
@@ -142,7 +142,7 @@ def revoke_access_token():
     return jsonify({"message": "token revoked"}), 200
 
 
-@blueprint.route("/revoke_refresh", methods=["DELETE"])
+@blueprint.delete("/revoke_refresh")
 @jwt_required(refresh=True)
 def revoke_refresh_token():
     """Revoke a refresh token, used mainly for logout

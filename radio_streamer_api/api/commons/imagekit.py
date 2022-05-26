@@ -3,7 +3,6 @@ import os
 import os.path as pth
 
 from imagekitio import ImageKit
-from numpy import imag
 from werkzeug.utils import secure_filename
 
 imagekit = ImageKit(
@@ -25,22 +24,20 @@ def upload_file(file_obj: BinaryIO, name: str, ext: str = "mp3", folder=""): #10
             }
         )
         if res['error']:
-            print(res['error'])
-            raise ValueError
+            raise ValueError(res['error'])
         res = res['response']
         return {"id": res["fileId"], "name": res["name"],
                  "url": res["url"]}
     except Exception as e:
-        print(e)
-        raise ValueError
+        raise Exception(e)
 
 def delete_file(file_id):
     try:
         res = imagekit.delete_file(file_id)
         if res["error"]:
-            raise ValueError
-    except:
-        raise ValueError
+            raise Exception(res['error'])
+    except Exception as e:
+        raise Exception(e)
     return res
 
 class ImageKit:

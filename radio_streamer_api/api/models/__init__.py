@@ -1,4 +1,4 @@
-from radio_streamer_api.api.models.models import User, Media
+from api.models.models import User, Media
 from api.models.blocklist import TokenBlocklist
 
 

@@ -2,8 +2,8 @@ from flask import Blueprint, current_app, jsonify
 from flask_restful import Api
 from marshmallow import ValidationError
 from api.extensions import apispec
-from api.api.resources.resources import UserList
-from api.api.resources.admin import MediaResource
+from api.api.resources.resources import UserList, CurrentPlay
+from api.api.resources.admin import MediaResource, PlayList, Play
 from api.api.schemas import UserSchema
 
 
@@ -11,15 +11,16 @@ blueprint = Blueprint("api", __name__, url_prefix="/api/v1")
 api = Api(blueprint)
 
 
-api.add_resource(UserList, "/users", endpoint="users")
-api.add_resource(MediaResource, "/media/<int:user_id>", endpoint="media")
+# Resource
+api.add_resource(UserList, "/users", "/users/<int:user_id>", endpoint="users")
+api.add_resource(CurrentPlay, "/current-play", endpoint="current_play")
 
-
-@blueprint.before_app_first_request
-def register_views():
-    apispec.spec.components.schema("UserSchema", schema=UserSchema)
-    apispec.spec.path(view=UserResource, app=current_app)
-    apispec.spec.path(view=UserList, app=current_app)
+# Admin resources
+api.add_resource(MediaResource, "/media", "/media/<title>", 
+                 "/media/<title>/<playlist>", endpoint="media")
+api.add_resource(PlayList, "/playlist/<playlist>", "/playlist/<playlist>/<title>",
+                 "/playlist", endpoint="playlist")
+api.add_resource(Play, "/play", endpoint="play")
 
 
 @blueprint.errorhandler(ValidationError)
