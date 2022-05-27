@@ -29,7 +29,7 @@ class Media(db.Model):
     title = db.Column(db.String(20))
     playlist = db.Column(db.String(20))
     thumbnail_image_url = db.Column(db.String(255))
-    audio_url = db.Column(db.String(20))
+    audio_url = db.Column(db.String(255))
     misc = db.Column(db.PickleType, default=dict())
     setter_id = db.Column(db.Integer)
 

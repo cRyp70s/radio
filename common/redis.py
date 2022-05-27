@@ -21,6 +21,8 @@ class Redis:
 
     def get(self, key: Union[bytes, str]) -> Any:
         serialized_data = self.instance.get(key)
+        if not serialized_data:
+            return ''
         data = json.loads(serialized_data)
         return data
 

@@ -1,0 +1,77 @@
+version: '3.3'
+services:
+  streamer:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - "8081:8080"
+    networks:
+      - radio
+    depends_on:
+      - rtsp-server
+      - redis
+      - api
+      - db
+  
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '63791:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - cache:/data
+    networks:
+      - radio
+  
+  rtsp-server:
+    image: aler9/rtsp-simple-server
+    restart: always
+    ports:
+      - 8554:8554
+      - 1935:1935 
+      - 8889:8888
+    environment:
+      - RTSP_PROTOCOLS=tcp
+    networks:
+      - radio
+  
+  db:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=radio_api
+    ports:
+      - '54321:5432'
+    volumes: 
+      - ./vol/db/data:/var/lib/postgresql/data
+      - ./vol/db/log:/var/log/postgresql
+    networks:
+      - radio
+  
+  api:
+    build: ./radio_streamer_api
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    networks:
+      - radio
+    depends_on:
+      - redis
+      - db
+
+networks:
+  radio:
+    driver: bridge
+
+volumes:
+  cache:
+    driver: local
+  db:
+    driver: local

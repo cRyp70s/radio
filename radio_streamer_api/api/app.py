@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from api import api
 from api import auth
@@ -26,7 +27,9 @@ def create_app(testing=False):
     with app.app_context():
         db.create_all()
         if not User.query.filter_by(is_admin=True).all():
-            admin = User(email="admin@admin.com", password="admin", is_admin=True)
+            admin_mail = os.environ.get("ADMIN_EMAIL") or "admin@admin.com"
+            admin_pass = os.environ.get("ADMIN_PASS") or "admin"
+            admin = User(email=admin_mail, password=admin_pass, is_admin=True)
             db.session.add(admin)
             db.session.commit()
 

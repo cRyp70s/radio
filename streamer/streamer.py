@@ -90,7 +90,10 @@ def run():
             while True:
                 # CURRENT_PLAY is a list in the following format
                 # [<playlist>, [(name, song_url, thumbnail_url)..]]
-                playlist, songs = redis_backend.get("CURRENT_PLAY")
+                try:
+                    playlist, songs = redis_backend.get("CURRENT_PLAY")
+                except:
+                    continue
 
                 try:
                     # Get ads
@@ -117,7 +120,7 @@ def run():
                             stdout=sp.PIPE,
                         ).stdout.read()
                     )
-                    sleep = sl * 0.95
+                    sleep = sl * 0.97
                     logging.debug(
                         f"Waiting for {song_name} \
                                   to finish play {sleep}."
