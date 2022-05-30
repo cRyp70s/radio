@@ -31,7 +31,7 @@ def test_play_plist(client, admin_headers, create_plist):
     # Test play from playlist
     resp = client.post(play_url, headers=admin_headers,
                      json={"playlist": plist})
-    assert resp.status_code == 200 and resp.get_json()[0] == plist
+    assert resp.status_code == 200 and resp.get_json()["playlist"] == plist
 
     # Test non existent plist
     resp = client.post(play_url, headers=admin_headers,
@@ -59,19 +59,18 @@ def test_get_plist(client, admin_headers, create_plist):
     assert resp.status_code == 200 and data["playlist"] == plist \
             and data["title"] == song
     
-    # Test get playlists only
-    play_url = url_for('api.playlist', playlist=plist, title=song,
-                        playlists_only="true")
-    
-    resp = client.get(play_url, headers=admin_headers)
-    data = resp.get_json()["playlists"]
-    assert resp.status_code == 200 and plist in data[0]
-    
     # Test non existent playlist
     play_url = url_for('api.playlist', playlist="fdtg4r54t4", title=song)
     resp = client.get(play_url, headers=admin_headers)
     assert resp.get_json()["results"] == []
+
+def test_get_plists(client, admin_headers, create_plist):
+    # Test get playlists only
+    play_url = url_for('api.playlists')
     
+    resp = client.get(play_url, headers=admin_headers)
+    data = resp.get_json()["playlists"]
+    assert resp.status_code == 200 and plist in data[0]
 
 # MEDIA RESOURCE TESTS
 

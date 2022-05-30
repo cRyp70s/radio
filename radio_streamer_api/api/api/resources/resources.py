@@ -10,8 +10,67 @@ from api.commons.redis import redis_backend
 
 
 class UserList(Resource):
-    """
-        Creation and get_all
+    """User creation, view and delete resource
+    ---
+    get:
+      tags:
+        - users
+      summary: Get a user
+      description: Get a single user by id
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: UserSchema
+        404:
+          description: user does not exists
+    post:
+      tags:
+        - users
+      summary: Create a user
+      description: Create a single user
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: user created
+        404:
+          description: user does not exists
+    delete:
+      tags:
+        - users
+      summary: Delete a user
+      description: Delete a single user by ID
+      parameters:
+        - in: path
+          name: user_id
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: user deleted
+        404:
+          description: user does not exists
     """
 
     method_decorators = [jwt_required(optional=True)]
@@ -45,7 +104,23 @@ class UserList(Resource):
 
 class CurrentPlay(Resource):
     """
-      Creation and get_all
+      Get currently playing song data
+      ---
+      get:
+        summary: Get currently playing song.
+        tags:
+          - current_play
+        responses:
+          200:
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    song_name: 
+                      type: string
+                    thumbnail: 
+                      type: string
     """
 
     def get(self):

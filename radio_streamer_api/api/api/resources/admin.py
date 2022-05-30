@@ -21,44 +21,23 @@ from api.commons import storage
 
 
 class Play(Resource):
-    """Single object resource
+    """Play songs from a playlist
 
     ---
-    get:
+    post:
       tags:
-        - api
-      summary: Get a user
-      description: Get a single user by ID
-      parameters:
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user: UserSchema
-        404:
-          description: user does not exists
-    put:
-      tags:
-        - api
-      summary: Update a user
-      description: Update a single user by ID
-      parameters:
-        - in: path
-          name: user_id
-          schema:
-            type: integer
+        - play
+      summary: Play songs
+      description: play songs
       requestBody:
         content:
           application/json:
             schema:
-              UserSchema
+              type: object
+              properties:
+                playlist:
+                  type: string
+
       responses:
         200:
           content:
@@ -66,34 +45,14 @@ class Play(Resource):
               schema:
                 type: object
                 properties:
-                  msg:
+                  playlist:
                     type: string
-                    example: user updated
-                  user: UserSchema
+                  songs:
+                    type: array
+                    items:
+                      type: string
         404:
-          description: user does not exists
-    delete:
-      tags:
-        - api
-      summary: Delete a user
-      description: Delete a single user by ID
-      parameters:
-        - in: path
-          name: user_id
-          schema:
-            type: integer
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-                    example: user deleted
-        404:
-          description: user does not exists
+          description: playlist does not exist
     """
 
     method_decorators = [admin_required, jwt_required()]
@@ -103,11 +62,13 @@ class Play(Resource):
         # in_schema = PlayFromPlaylistRequestSchema()
         media = request.json
         playlist = media["playlist"]
-        out = [playlist]
+        out = {"playlist": playlist}
         out_songs = []
         medias = Media.query.filter(Media.playlist==playlist).all()
         promos = []
         promotions = Media.query.filter(Media.playlist=='promotion').all()
+        
+        # set promotions to be played
         for p in promotions:
             promos.append((p.audio_name, p.audio_url, p.thumbnail_image_url))
         redis_backend.set("CURRENT_PROMOTIONS", promos)
@@ -115,7 +76,7 @@ class Play(Resource):
               abort(404, message="playlist not found")
         for m in medias:
             out_songs.append((m.title, m.audio_url, m.thumbnail_image_url))
-        out.append(out_songs)
+        out["songs"] = out_songs
         redis_backend.set("CURRENT_PLAY", out)
         redis_backend.set("CURRENT_THUMB", out[1][0][-1])
         return jsonify(out)
@@ -128,9 +89,14 @@ class PlayList(Resource):
     ---
     get:
       tags:
-        - api
-      summary: Get a list of users
-      description: Get a list of paginated users
+        - playlist
+      summary: Get playlist and content
+      description: Get playlist content
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
       responses:
         200:
           content:
@@ -143,28 +109,34 @@ class PlayList(Resource):
                       results:
                         type: array
                         items:
-                          $ref: '#/components/schemas/UserSchema'
+                          schema: AddPlaylistSchema
     post:
       tags:
-        - api
-      summary: Create a user
-      description: Create a new user
+        - playlist
+      summary: Add song to playlist
+      description: Add to playlist
       requestBody:
         content:
           application/json:
             schema:
-              UserSchema
+              AddPlaylistSchema
       responses:
         201:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  msg:
-                    type: string
-                    example: user created
-                  user: UserSchema
+                type: null
+    delete:
+      tags:
+        - playlist
+      summary: Delete song from playlist
+      description: Delete to playlist
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                type: null
     """
 
     method_decorators = [admin_required, jwt_required()]
@@ -174,18 +146,6 @@ class PlayList(Resource):
         """
         schema = AddPlaylistSchema(many=True)
         query = Media.query
-        if request.args.get("playlists_only") == "true":
-              all = query.all()
-              playlists = []
-              already = []
-              i = 0
-              for pl in all:
-                    plist = pl.playlist
-                    if plist not in already:  
-                      already.append(plist)
-                      playlists.append([i, plist])
-                      i += 1
-              return {"playlists": list(playlists)}
         query = query.filter_by(playlist=playlist)
         if title and title != '*':
               query = query.filter_by(title=title)
@@ -221,6 +181,47 @@ class PlayList(Resource):
 
         return
 
+class PlayListAll(Resource):
+    """
+        Get available playlists
+
+    ---
+    get:
+      tags:
+        - playlist
+      summary: Get playlists
+      description: Get playlists
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  playlists:
+                    type: array
+                    items:
+                      type: string
+    """
+
+    method_decorators = [admin_required, jwt_required()]
+
+    def get(self, playlist, title=''):
+        """
+        """
+        query = Media.query
+        all = query.all()
+        playlists = []
+        already = []
+        i = 0
+        for pl in all:
+              plist = pl.playlist
+              if plist not in already:  
+                already.append(plist)
+                playlists.append([i, plist])
+                i += 1
+        return {"playlists": list(playlists)}
+
 
 class MediaResource(Resource):
     """
@@ -235,6 +236,8 @@ class MediaResource(Resource):
             cloud storage.
         """
         media = Media.query.filter_by(title=title, playlist=playlist).first()
+        
+        # Update or Create
         if media:
             media.title = title
             media.playlist = playlist
@@ -242,13 +245,15 @@ class MediaResource(Resource):
             media = Media(title=title, playlist=playlist)
         files  = request.files
         thumbnail = files.get("thumbnail")
+        
         try:
             audio = files["audio"]
         except KeyError:
             abort(400, message="audio file must be provided")
+        
         aud_upload = storage.upload_media(audio, title, playlist=playlist)
         thumb_upload = storage.upload_media(thumbnail, title, "jpg", playlist=playlist)
-        print(thumb_upload, aud_upload)
+        
         misc = {"aud_id": aud_upload["id"], "thumb_id": thumb_upload["id"]}
         media.misc = misc
         media.audio_url = aud_upload["url"]

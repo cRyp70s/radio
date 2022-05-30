@@ -14,6 +14,7 @@ def create_app(testing=False):
     """Application factory, used to create application"""
     app = Flask("api")
     app.config.from_object("api.config")
+    app.config["SERVER_NAME"] = "127.0.0.1:8000"
 
     if testing is True:
         app.config["TESTING"] = True
@@ -32,7 +33,12 @@ def create_app(testing=False):
             admin = User(email=admin_mail, password=admin_pass, is_admin=True)
             db.session.add(admin)
             db.session.commit()
-
+    
+    @app.route("/redoc")
+    def redoc():
+        print(apispec.swagger_json())
+        return (apispec.swagger_ui())
+    
     return app
 
 
