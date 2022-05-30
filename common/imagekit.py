@@ -3,7 +3,6 @@ import os
 import os.path as pth
 
 from imagekitio import ImageKit
-from numpy import imag
 from werkzeug.utils import secure_filename
 
 imagekit = ImageKit(
